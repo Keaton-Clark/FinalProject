@@ -3,19 +3,16 @@
 #include <stdio.h>
 #include "io.h"
 
+#define LCD_ADDR 0x27
+
 int main () {
 	uart_init(9600);
-	adc_init();
-	pin_t led = new_pin(13);
-	pin_mode(led, OUTPUT);
-	uint16_t i;
+	twi_init();
 	for (;;) {
-		i = adc_read(0);
-		printf("%d\n", i);
-		if (i > 512) {
-			write_pin(led, HIGH);
-		} else {
-			write_pin(led, LOW);
+		if(twi_start(LCD_ADDR, TWI_W) == TWI_W_ADDR_ACK) {
+			printf("0x%x", twi_write('a'));
+			twi_stop();
 		}
+		_delay_ms(1000);
 	}
 }

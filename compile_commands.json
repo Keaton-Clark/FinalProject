@@ -1,0 +1,62 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/avr-gcc",
+      "-mmcu=atmega2560",
+      "-Os",
+      "-DF_CPU=16000000UL",
+      "-c",
+      "-o",
+      "bin/src/io.o",
+      "src/io.c"
+    ],
+    "directory": "/home/kc/Edu/CPE/FinalProject",
+    "file": "/home/kc/Edu/CPE/FinalProject/src/io.c",
+    "output": "/home/kc/Edu/CPE/FinalProject/bin/src/io.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/avr-gcc",
+      "-mmcu=atmega2560",
+      "-Os",
+      "-DF_CPU=16000000UL",
+      "-c",
+      "-o",
+      "bin/src/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/kc/Edu/CPE/FinalProject",
+    "file": "/home/kc/Edu/CPE/FinalProject/src/main.c",
+    "output": "/home/kc/Edu/CPE/FinalProject/bin/src/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/avr-gcc",
+      "-mmcu=atmega2560",
+      "-Os",
+      "-DF_CPU=16000000UL",
+      "-c",
+      "-o",
+      "bin/src/matrix.o",
+      "src/matrix.c"
+    ],
+    "directory": "/home/kc/Edu/CPE/FinalProject",
+    "file": "/home/kc/Edu/CPE/FinalProject/src/matrix.c",
+    "output": "/home/kc/Edu/CPE/FinalProject/bin/src/matrix.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/avr-gcc",
+      "-mmcu=atmega2560",
+      "-Os",
+      "-DF_CPU=16000000UL",
+      "-c",
+      "-o",
+      "bin/src/sevenseg.o",
+      "src/sevenseg.c"
+    ],
+    "directory": "/home/kc/Edu/CPE/FinalProject",
+    "file": "/home/kc/Edu/CPE/FinalProject/src/sevenseg.c",
+    "output": "/home/kc/Edu/CPE/FinalProject/bin/src/sevenseg.o"
+  }
+]

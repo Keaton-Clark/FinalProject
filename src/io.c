@@ -1,6 +1,8 @@
 #include "io.h"
 #include <avr/pgmspace.h>
+#include <avr/sfr_defs.h>
 #include <stdio.h>
+#include <math.h>
 #define GROUPA 1
 #define GROUPB 2
 #define GROUPC 3
@@ -250,4 +252,34 @@ uint16_t adc_read(uint8_t channel) {
 	loop_until_bit_is_set(ADCSRA, ADIF); //SC bit will be clear when conversion is done
 	ADCSRA |= _BV(ADIF);
 	return ADC;
+}
+#define BITRATE ((F_CPU/SCL_CLK)-16)/2
+void twi_init() {
+	TWBR = BITRATE;
+	TWSR = 0x00;
+}
+
+uint8_t twi_start(uint8_t addr, uint8_t rw) {
+	write_pin(new_pin(20), HIGH); // SDA pullup resistor on
+	write_pin(new_pin(21), HIGH); // SCL pullup resistor on
+	TWCR = (1<<TWINT)|(1<<TWSTA)|(1<<TWEN); // Transmit start
+	while (!(TWCR & (1<<TWINT))); // Wait till start condition is transmitted
+	if ((TWSR & 0xf8) != 0x08)
+		return TWI_START_FAIL;
+	TWDR = (addr << 1) | rw; // add rw flag to end of address and send
+	TWCR = (_BV(TWEN) | _BV(TWINT)); 
+	while (!(TWCR & _BV(TWINT)));
+	return (TWSR & 0xf8); // return upper 5 bits
+}
+
+uint8_t twi_write(uint8_t data) {
+	TWDR = data;
+	TWCR = (_BV(TWEN) | _BV(TWINT)); // clear flag and enable
+	while (!(TWCR & _BV(TWINT))); // wait for completion
+	return (TWSR & 0xf8); // return upper 5 bits
+}
+
+void twi_stop() {
+	TWCR = (_BV(TWSTO) | _BV(TWINT) | _BV(TWEN));
+	while (!(TWCR & _BV(TWSTO)));
 }
