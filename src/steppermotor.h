@@ -14,4 +14,4 @@ typedef struct stepper_motor {
 
 motor_t init_motor(pin_t *pins);
 void one_step_turn(motor_t motor);
-void write(int a,int b,int c,int d); // helper function for one_step_turn
+void write(motor_t motor, int a,int b,int c,int d); // helper function for one_step_turn
