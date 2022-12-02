@@ -3,6 +3,7 @@
 // https://create.arduino.cc/projecthub/debanshudas23/getting-started-with-stepper-motor-28byj-48-3de8c9
 
 // basic stepper motor functionality. fix so that it doesn't use pinmode etc.
+/*
 #define A 2
 #define B 3
 #define C 4
@@ -49,4 +50,4 @@ i=0;
 while(i<NUMBER_OF_STEPS_PER_REV){
 onestep();
 i++;
-}
+}*/

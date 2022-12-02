@@ -152,7 +152,7 @@ uint8_t read_pin(pin_t pin) {
 pin_t new_pin(uint8_t pinNum) {
 	pin_t pin = {
 		._group = get_digital_pin_to_group(pinNum),
-	       	._bitmask = get_digital_pin_to_bitmask(pinNum)
+	    ._bitmask = get_digital_pin_to_bitmask(pinNum)
 	};
 	pin._ddr = (void*)get_group_to_ddr(pin._group);
 	pin._port = (void*)get_group_to_port(pin._group);
@@ -272,7 +272,7 @@ uint8_t twi_start(uint8_t addr, uint8_t rw) {
 	return (TWSR & 0xf8); // return upper 5 bits
 }
 
-uint8_t twi_write(uint8_t data) {
+uint8_t twi_put(uint8_t data) {
 	TWDR = data;
 	TWCR = (_BV(TWEN) | _BV(TWINT)); // clear flag and enable
 	while (!(TWCR & _BV(TWINT))); // wait for completion
@@ -282,4 +282,13 @@ uint8_t twi_write(uint8_t data) {
 void twi_stop() {
 	TWCR = (_BV(TWSTO) | _BV(TWINT) | _BV(TWEN));
 	while (!(TWCR & _BV(TWSTO)));
+}
+
+void twi_write(uint8_t *data, size_t size, uint8_t addr/*, status? */) {
+	if(twi_start(addr, TWI_W) == TWI_W_ADDR_ACK) {
+		for (size_t i = 0; i < size; ++i) {
+			twi_put(data[i]);
+		}
+		twi_stop();
+	}
 }
