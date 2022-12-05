@@ -1,7 +1,7 @@
 # CPE 301 Final Project
 
-**Team name**: (we need one)
-**Members:** Keaton Clark, Chris Zinser, Jann Arellano, Lloyd Gonzales
+- **Team name**: (we need one)
+- **Members:** Keaton Clark, Chris Zinser, Jann Arellano, Lloyd Gonzales
 
 ## (approximate) timeline
 - Dec 3: Modular logic completed; individual sensors working on breadboards
@@ -69,3 +69,48 @@
 	- [ ] Operating temperatures
 	- [ ] Power requirements
 	- [ ] ... some others I can't think of
+
+## Developing with WSL
+(see https://learn.microsoft.com/en-us/windows/wsl/connect-usb)
+
+Prerequisites:
+- WSL with Linux kernel 5.10.60.1 or later
+- Ubuntu 20.04
+
+On Ubuntu, install the AVR development packages:
+```bash
+sudo apt-get install gcc-avr binutils-avr gdb-avr avr-libc avrdude
+```
+
+Then, download the latest release of usbipd-win using the .msi and restart:
+https://github.com/dorssel/usbipd-win/releases
+
+After restarting, start WSL and run
+```bash
+sudo apt install linux-tools-5.4.0-77-generic hwdata
+sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/5.4.0-77-generic/usbip 20
+```
+
+**With WSL running** and the Arduino plugged in, in an (administrator) Windows command prompt (or PowerShell window), do
+```bash
+usbipd wsl list
+```
+
+Pick the bus ID that corresponds to the Arduino, then run
+```bash
+usbipd wsl attach --busid <busid>
+```
+
+which will prompt for a password to run a sudo command. Then, in Ubuntu, to check that it's actually worked as well as what dev it's been assigned to:
+```
+dmesg | grep tty
+```
+
+Modify the makefile if needed (which shouldn't be necessary). You can run `usbipd wsl detach --busid <busid>` to return the Arduino to Windows, or just physically disconnect the Arduino.
+
+Finally, if you're using VS Code, it's a good idea to use WSL as your remote environment and set the compiler path to avr-gcc **for the current workspace** so it stops complaining about every missing library:
+```json
+{
+    "C_Cpp.default.compilerPath": "/usr/bin/avr-gcc"
+}
+```
