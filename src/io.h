@@ -63,10 +63,14 @@ uint16_t adc_read(uint8_t channel);
 // twi_write return codes
 #define TWI_W_DATA_ACK 0x28
 
+#define TWI_R_ADDR_ACK 0x40
+
 void twi_init();
 uint8_t twi_start(uint8_t addr, uint8_t rw);
 uint8_t twi_put(uint8_t data);
+uint8_t twi_get();
 void twi_stop();
 void twi_write(uint8_t *data, size_t size, uint8_t addr);
+void twi_read(uint8_t *data, size_t size, uint8_t addr);
 
 #endif //IO_H

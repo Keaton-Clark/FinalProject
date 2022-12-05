@@ -56,8 +56,6 @@ void stepper_rotate(stepper_t stepper, int16_t steps) {
 					_delay_ms(3);
 				}
 			}
-			
 		}
 		stepper_stop(stepper);
-
 }

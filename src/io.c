@@ -289,6 +289,25 @@ void twi_write(uint8_t *data, size_t size, uint8_t addr/*, status? */) {
 		for (size_t i = 0; i < size; ++i) {
 			twi_put(data[i]);
 		}
-		twi_stop();
 	}
+	twi_stop();
+}
+uint8_t twi_get_ack() {
+	TWCR = _BV(TWEN) | _BV(TWEA) | _BV(TWINT);
+	while(!(TWCR & _BV(TWINT)));
+	return TWDR;
+}
+uint8_t twi_get_nack() {
+	TWCR = _BV(TWEN) | _BV(TWINT);
+	while(!(TWCR & _BV(TWINT)));
+	return TWDR;
+}
+void twi_read(uint8_t *data, size_t size, uint8_t addr) {
+	if(twi_start(addr, TWI_R) == TWI_R_ADDR_ACK) {
+		for (size_t i = 0; i < size-1; ++i) {
+			data[i] = twi_get_ack();
+		}
+		data[size-1] = twi_get_nack();
+	}
+	twi_stop();
 }
