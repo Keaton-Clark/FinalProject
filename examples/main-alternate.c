@@ -6,6 +6,7 @@ State machine prototype. Adapt to new program in main.c.
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "io.h"
 #include "lcd_twi.h"
 #include "steppermotor.h"
@@ -14,6 +15,7 @@ State machine prototype. Adapt to new program in main.c.
 
 // Parameters.
 #define VENT_DIRECTION_THRESHOLD 50     // Debouncing threshold, also reduces false movement due to noise
+#define STEPS_PER_ANALOG_UNIT 10        // Number of stepper motor steps to take per unit difference between the last "move" and this "move".
 #define WATER_LEVEL_THRESHOLD 256       // Analog threshold of water sensor before transitioning to ERROR.
 #define TEMPERATURE_THRESHOLD 70        // Minimum temperature threshold for the fan to run.
 
@@ -51,9 +53,8 @@ State machine prototype. Adapt to new program in main.c.
 #define START_BUTTON_INTERRUPT_VECTOR INT0_vect
 #define STOP_BUTTON_INTERRUPT_VECTOR INT0_vect
 #define RESET_BUTTON_INTERRUPT_VECTOR INT0_vect
-ISR(START_BUTTON_INTERRUPT_VECTOR);
-ISR(STOP_BUTTON_INTERRUPT_VECTOR);
-ISR(REST_BUTTON_INTERRUPT_VECTOR);
+#define TIMER_INTERRUPT_VECTOR TIMER1_OVF_vect
+
 // TODO: write code to initialize these interrupts
 //       (change ISCn0:ISCn1 to interrupt on rising edge, set EIMSKn to 1)
 
@@ -81,6 +82,8 @@ pin_t fan_motor;
 stepper_t stepper;
 
 FILE lcd;
+
+dht11_t dht11_data;
 
 void setup(){
     // Enable interrupts
@@ -129,7 +132,23 @@ void log_message(char* message){
     
     tsnprintf(time_str, 100, time);
     printf("[%s] %s\n", time_str, message);
-    _delay_ms(1000);
+}
+
+void write_temperature(char* line_2_msg){
+    dht11_data = dht11_read(DHT11_DIGITAL_PIN);
+    
+    lcd_twi_clear(&lcd);
+
+    // Best to write a conditional here so it's clearer what these are
+    // unless a message is needed
+    lcd_twi_cursor(&lcd, 0, 0);
+    fprintf(&lcd, "%.1fC");
+
+    lcd_twi_cursor(&lcd, 6, 0);
+    fprintf(&lcd, "H:%.1f%");
+
+    lcd_twi_cursor(&lcd, 0, 1);
+    fprintf(&lcd, line_2_msg);
 }
 
 int main(){
@@ -137,7 +156,6 @@ int main(){
     // that was used to change the vent direction.
     uint16_t last_pot_change_value;
     uint16_t water_level;
-    dht11_t dht11_data;
 
     setup();
 
@@ -150,7 +168,11 @@ int main(){
 
         // Has the potentiometer changed by a meaningful amount?
         // If so, trigger a change on the stepper motor
-        // TODO: write this
+        uint16_t current_pot_value = adc_read(STEPPER_POT_ANALOG_PIN);
+        if (abs(current_pot_value - last_pot_change_value) > VENT_DIRECTION_THRESHOLD){
+            int32_t difference = current_pot_value - last_pot_change_value;
+            int16_t steps = difference * STEPS_PER_ANALOG_UNIT;
+        }
 
         if(state == DISABLED){
             // Don't do anything else.
@@ -179,13 +201,16 @@ int main(){
 // Start button monitored with ISR
 void transition_to_disabled(){
     // Record transition time to UART
+    log_message("Transition to DISABLED");
     
-    // Disable the timer that's updating the LCD screen
+    // TODO:Disable the timer that's updating the LCD screen
+
     
     // Turn on the LED
     // TODO: what's the best way to "turn off" all the other LEDs? another function?
 
     // Set global program state to DISABLED
+    state = DISABLED;
 }
 
 
@@ -194,6 +219,7 @@ void transition_to_disabled(){
 // GREEN LED should be ON
 void transition_to_idle(){
     // Record transition time to UART
+    log_message("Transition to IDLE");
     
     // Enable the timer that's updating the LCD screen
     
@@ -202,7 +228,7 @@ void transition_to_idle(){
     // Turn off the fan motor
 
     // Set global program state to IDLE
-    
+    state = IDLE;
 }
 
 // Fan motor should be on
@@ -211,12 +237,14 @@ void transition_to_idle(){
 // BLUE LED should be turned on (all other LEDs turned off)
 void transition_to_running(){
     // Record transition time to UART
+    log_message("Transition to RUNNING");
     
     // Turn on the fan motor
     
     // Turn on the LED
 
-    // Set global program state to IDLE
+    // Set global program state to RUNNING
+    state = RUNNING;
 }
 
 // Motor should be off and not start regardless of temperature
@@ -225,7 +253,8 @@ void transition_to_running(){
 // RED LED should be turned on (all other LEDs turned off)
 void transition_to_error(){
     // Record transition time to UART
-    
+    log_message("Transition to ERROR");
+
     // Write message to LCD
     
     // Turn off the fan motor
@@ -233,6 +262,7 @@ void transition_to_error(){
     // Turn on red LED
 
     // Set global program state to ERROR
+    state = ERROR;
 }
 
 /* ISRs */
@@ -257,6 +287,9 @@ ISR(RESET_BUTTON_INTERRUPT_VECTOR){
     }
 }
 
+ISR(TIMER_INTERRUPT_VECTOR){
+    // TODO: Reset timer, reload with enough ticks to count up to a minute
+}
 // TODO: may be necessary to write an additional timer ISR if we really need
 //       the LCD to only update once every minute
 //       since this ISR shouldn't be running all the time, we'd also
