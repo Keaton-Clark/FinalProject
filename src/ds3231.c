@@ -18,5 +18,5 @@ time_t get_time(uint8_t addr) {
 }
 
 void tsnprintf(char* str, size_t size, time_t time) {
-	snprintf(str, size, "%d/%d/%d %d:%d:%d", time.month, time.day, time.year, time.hour, time.min, time.sec);
+	snprintf(str, size, "%d/%d/%d %d:%.2d:%.2d", time.month, time.day, time.year, time.hour, time.min, time.sec);
 }

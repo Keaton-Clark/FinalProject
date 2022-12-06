@@ -67,7 +67,6 @@ void lcd_twi_pulse_en(lcd_twi_t *lcd, uint8_t data) {
 }
 
 void lcd_twi_w4(lcd_twi_t *lcd, uint8_t data) {
-	lcd_twi_w8(lcd, data);
 	lcd_twi_pulse_en(lcd, data);
 }
 
