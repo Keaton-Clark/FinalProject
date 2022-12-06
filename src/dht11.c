@@ -63,5 +63,6 @@ dht11_t dht11_read(uint8_t pin_num) {
 		out.temp = -1 - out.temp;
 	}
 	out.temp += (data[3] & 0x0f) * .1;
+	sei(); //enable interrupts
 	return out;
 }

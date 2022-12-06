@@ -1,7 +1,7 @@
 # Compiler
 CC = avr-gcc
 # Flags
-CFLAGS = -Os -DF_CPU=16000000UL -Wl,-u,vfprintf -lprintf_flt -lm
+CFLAGS = -Os -DF_CPU=16000000UL -Wl,-u,vfprintf -lprintf_flt -lm -Wall
 # Final binary
 BIN = $(shell basename `pwd`)
 
