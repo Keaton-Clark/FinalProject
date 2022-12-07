@@ -17,7 +17,7 @@ State machine prototype. Adapt to new program in main.c.
 #define VENT_DIRECTION_THRESHOLD 50     // Debouncing threshold, also reduces false movement due to noise
 #define STEPS_PER_ANALOG_UNIT 10        // Number of stepper motor steps to take per unit difference between the last "move" and this "move".
 #define WATER_LEVEL_THRESHOLD 256       // Analog threshold of water sensor before transitioning to ERROR.
-#define TEMPERATURE_THRESHOLD 21        // Minimum temperature threshold for the fan to run.
+#define TEMPERATURE_THRESHOLD 0       // Minimum temperature threshold for the fan to run.
 
 // Pin definitions.
 #define RED_LED_DIGITAL_PIN 28
@@ -66,6 +66,11 @@ typedef enum {
     ERROR = 3
 } program_state_t;
 
+void transition_to_disabled();
+void transition_to_idle();
+void transition_to_running();
+void transition_to_error();
+
 program_state_t state = DISABLED;
 
 /* Global definitions. */
@@ -89,6 +94,53 @@ uint8_t seconds_since_last_update = 0;
 // If RTC polled
 uint8_t minute_of_last_update;
 
+void log_message(char* message){
+    char time_str[100]; // TODO: "memory safety"
+    time_t time = get_time(RTC_ADDR);
+    
+    tsnprintf(time_str, 100, time);
+    printf("[%s] %s\n", time_str, message);
+}
+
+void write_lcd(char* line_2_msg){
+    dht11_data = dht11_read(DHT11_DIGITAL_PIN);
+    
+    lcd_twi_clear(&lcd);
+
+    // Best to write a conditional here so it's clearer what these are
+    // unless a message is needed
+    lcd_twi_cursor(&lcd, 0, 0);
+    fprintf(&lcd, "%.1fC", dht11_data.temp);
+
+    lcd_twi_cursor(&lcd, 6, 0);
+    fprintf(&lcd, "H:%.1f%%", dht11_data.humidity);
+
+    lcd_twi_cursor(&lcd, 0, 1);
+    fprintf(&lcd, line_2_msg);
+}
+
+// Set the LED we want on (and none of the other LEDs)
+void set_leds(program_state_t state){
+    for(int i = 0; i < 4; i++){
+        pin_t* led = leds[i];
+        if(state == i){
+            write_pin(*led, HIGH);
+        }else{
+            write_pin(*led, LOW);
+        }
+    }
+}
+
+void stop_second_timer(){
+    TCCR1B &= 0xF8;
+}
+
+void start_second_timer(){
+    TCNT1 = 65536-15625; // Exact number of ticks for one second interrupts
+    TCCR1B = 0xFD; // Max prescaler, all other "normal" options (enables timer)
+}
+
+
 void setup(){
     // Enable interrupts
     sei();
@@ -101,7 +153,7 @@ void setup(){
     EIMSK |= 0b00011100;
 
     // Set up 1-second timer
-    TIMSK1 = 0b00000001; // Enable timer interrupts
+    //TIMSK1 = 0b00000001; // Enable timer interrupts
     start_second_timer();
 
     // Initalize UART, 9600 baud
@@ -139,65 +191,22 @@ void setup(){
     write_lcd("");
 
     minute_of_last_update = get_time(RTC_ADDR).min;
-}
 
-void log_message(char* message){
-    char time_str[100]; // TODO: "memory safety"
-    time_t time = get_time(RTC_ADDR);
-    
-    tsnprintf(time_str, 100, time);
-    printf("[%s] %s\n", time_str, message);
-}
-
-void write_lcd(char* line_2_msg){
-    dht11_data = dht11_read(DHT11_DIGITAL_PIN);
-    
-    lcd_twi_clear(&lcd);
-
-    // Best to write a conditional here so it's clearer what these are
-    // unless a message is needed
-    lcd_twi_cursor(&lcd, 0, 0);
-    fprintf(&lcd, "%.1fC");
-
-    lcd_twi_cursor(&lcd, 6, 0);
-    fprintf(&lcd, "H:%.1f%");
-
-    lcd_twi_cursor(&lcd, 0, 1);
-    fprintf(&lcd, line_2_msg);
-}
-
-// Set the LED we want on (and none of the other LEDs)
-void set_leds(program_state_t state){
-    for(int i = 0; i < 4; i++){
-        pin_t* led = leds[i];
-        if(state == i){
-            write_pin(*led, HIGH);
-        }else{
-            write_pin(*led, LOW);
-        }
-    }
-}
-
-void stop_second_timer(){
-    TCCR1B &= 0xF8;
-}
-
-void start_second_timer(){
-    TCNT1 = 65536-15625; // Exact number of ticks for one second interrupts
-    TCCR1B = 0xFD; // Max prescaler, all other "normal" options (enables timer)
+	// Initial transition
+	transition_to_disabled();
 }
 
 int main(){
     // Contains the last ADC value for the vent direction potentiometer
     // that was used to change the vent direction.
-    uint16_t last_pot_change_value;
+    uint16_t last_pot_change_value = 0;
     uint16_t water_level;
 
     setup();
 
     for(;;){
-        /*
         // Polling approach
+		/*
         time_t current_time = get_time(RTC_ADDR);
         if(current_time.sec == 0 && minute_of_last_update != current_time.min){
             if(state == ERROR){
@@ -205,10 +214,11 @@ int main(){
             }else{
                 write_lcd("");
             }
-            minute_of_last_update = current_time.min;
-        }
-        */
 
+			minute_of_last_update = current_time.min;
+        }
+		*/
+        
         // Timer interrupt approach
         if(seconds_since_last_update >= 60){
             if(state == ERROR){
@@ -216,10 +226,8 @@ int main(){
             }else{
                 write_lcd("");
             }
-            seconds_since_last_update = 0;
         }
-            
-
+		
         if(state == ERROR){
             // The only way to transition out of ERROR is to press the
             // reset button. There's nothing else special to do here.
@@ -228,6 +236,8 @@ int main(){
 
         // Has the potentiometer changed by a meaningful amount?
         // If so, trigger a change on the stepper motor
+        // BUG: this doesn't work!!
+        /*
         uint16_t current_pot_value = adc_read(STEPPER_POT_ANALOG_PIN);
         if (abs(current_pot_value - last_pot_change_value) > VENT_DIRECTION_THRESHOLD){
             int32_t difference = current_pot_value - last_pot_change_value;
@@ -235,6 +245,7 @@ int main(){
             stepper_rotate(stepper, steps);
             last_pot_change_value = current_pot_value;
         }
+        */
 
         if(state == DISABLED){
             // Don't do anything else.
@@ -270,6 +281,9 @@ void transition_to_disabled(){
     
     // Turn on the LED
     set_leds(DISABLED);
+
+    // Turn off the fan motor
+    write_pin(fan_motor, LOW);
 
     // Set global program state to DISABLED
     state = DISABLED;
@@ -352,11 +366,12 @@ ISR(RESET_BUTTON_INTERRUPT_VECTOR){
     // strictly speaking, the program will jump straight to ERROR if the water
     // level isn't high enough
     if(state == ERROR){
-        transition_to_error();
+        transition_to_idle();
     }
 }
 
 // TODO: is this how we want to update the LCD every minute?
+
 ISR(TIMER_INTERRUPT_VECTOR){
     stop_second_timer();
 
