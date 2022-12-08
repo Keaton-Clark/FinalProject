@@ -28,10 +28,10 @@ State machine prototype. Adapt to new program in main.c.
 
 #define FAN_MOTOR_DIGITAL_PIN 52
 
-#define STEPPER_MOTOR_DIGITAL_PIN_1 38
-#define STEPPER_MOTOR_DIGITAL_PIN_2 40
-#define STEPPER_MOTOR_DIGITAL_PIN_3 42
-#define STEPPER_MOTOR_DIGITAL_PIN_4 44
+#define STEPPER_MOTOR_DIGITAL_PIN_1 44
+#define STEPPER_MOTOR_DIGITAL_PIN_2 42
+#define STEPPER_MOTOR_DIGITAL_PIN_3 40
+#define STEPPER_MOTOR_DIGITAL_PIN_4 38
 
 #define DHT11_DIGITAL_PIN 50
 
@@ -90,9 +90,11 @@ FILE lcd;
 dht11_t dht11_data;
 
 // If internal clock approach taken
-uint8_t seconds_since_last_update = 0;
+uint8_t seconds_since_last_lcd_update = 0;
+uint8_t seconds_since_last_dht11_poll = 0;
 
 // If RTC polled
+// BUG: we'd need to update the dht11 code before using RTC polling
 uint8_t minute_of_last_update;
 
 // Contains the last ADC value for the vent direction potentiometer
@@ -109,6 +111,9 @@ void log_message(char* message){
 }
 
 void write_lcd(char* line_2_msg){
+    // BUG: again, DHT11 gets Very Angry if you poll it too quickly
+    // 2.5 sec delay to try and prevent this from being an issue
+    _delay_ms(2500);
     dht11_data = dht11_read(DHT11_DIGITAL_PIN);
     
     lcd_twi_clear(&lcd);
@@ -151,17 +156,6 @@ void setup(){
     // Enable interrupts
     sei();
 
-    // Set up button interrupts (INT2, INT3, INT4)
-    // Interrupt on rising edge only (not on all logical changes)
-    EICRA |= 0b11110000;
-    EICRB |= 0b00000011;
-    // Enable corresponding external pin interrupts
-    EIMSK |= 0b00011100;
-
-    // Set up 1-second timer
-    TIMSK1 = 0b00000001; // Enable timer interrupts
-    start_second_timer();
-
     // Initalize UART, 9600 baud
     uart_init(9600);
 
@@ -170,6 +164,17 @@ void setup(){
 
     // Enable ADC
     adc_init();
+
+    // Set up button interrupts (INT2, INT3, INT4)
+    // Interrupt on rising edge only (not on all logical changes)
+    EICRA |= 0b11110000;
+    EICRB |= 0b00000011;
+    // Enable corresponding external pin interrupts
+    EIMSK |= 0b00011100;
+
+    // Set up 1-second timer (must be done after adc_init())
+    TIMSK1 = 0b00000001; // Enable timer interrupts
+    start_second_timer();
 
     // Initialize everything
     red_led = new_pin(RED_LED_DIGITAL_PIN);
@@ -223,14 +228,14 @@ int main(){
 		*/
         
         // Timer interrupt approach
-        if(seconds_since_last_update >= 60){
+        if(seconds_since_last_lcd_update >= 60){
             if(state == ERROR){
                 write_lcd("Water low");
             }else{
                 write_lcd("");
             }
 
-            seconds_since_last_update = 0;
+            seconds_since_last_lcd_update = 0;
         }
 		
         if(state == ERROR){
@@ -242,9 +247,12 @@ int main(){
         // Has the potentiometer changed by a meaningful amount?
         // If so, trigger a change on the stepper motor
         uint16_t current_pot_value = adc_read(STEPPER_POT_ANALOG_CHANNEL);
-        if (abs(current_pot_value - last_pot_change_value) > VENT_DIRECTION_THRESHOLD){
+        uint16_t abs_difference = abs(current_pot_value - last_pot_change_value);
+        //printf("current pot value: %u, abs difference: %u\n", current_pot_value, abs_difference);
+        if (abs_difference > VENT_DIRECTION_THRESHOLD){
             int32_t difference = (int32_t)current_pot_value - (int32_t)last_pot_change_value;
             int16_t steps = difference * STEPS_PER_ANALOG_UNIT;
+            printf("[STEPPER MOTOR MOVING] - difference: %ld, steps: %d\n", difference, steps);
             stepper_rotate(stepper, steps);
             last_pot_change_value = current_pot_value;
         }
@@ -260,11 +268,16 @@ int main(){
             transition_to_error();
         }
 
-        dht11_data = dht11_read(DHT11_DIGITAL_PIN);
-        if (dht11_data.temp <= TEMPERATURE_THRESHOLD && state == RUNNING){
-            transition_to_idle();
-        } else if (dht11_data.temp > TEMPERATURE_THRESHOLD && state == IDLE){
-            transition_to_running();
+        // Only poll dht11 if three seconds have passed
+        if (seconds_since_last_dht11_poll >= 3){
+            seconds_since_last_dht11_poll = 0;
+
+            dht11_data = dht11_read(DHT11_DIGITAL_PIN);
+            if (dht11_data.temp <= TEMPERATURE_THRESHOLD && state == RUNNING){
+                transition_to_idle();
+            } else if (dht11_data.temp > TEMPERATURE_THRESHOLD && state == IDLE){
+                transition_to_running();
+            }
         }
     }
 }
@@ -376,12 +389,13 @@ ISR(TIMER_INTERRUPT_VECTOR){
     stop_second_timer();
 
     //DEBUG
-    dht11_data = dht11_read(DHT11_DIGITAL_PIN);
-    water_level = adc_read(WATER_SENSOR_ANALOG_CHANNEL);
-    uint16_t stepper_level = adc_read(STEPPER_POT_ANALOG_CHANNEL);
-    printf("T: %.2f, RH: %.2f\n, water level (0-1024): %u, pot(0-1024): %u", dht11_data.temp, dht11_data.humidity, water_level, stepper_level);
-    
-    seconds_since_last_update++;
+    //dht11_data = dht11_read(DHT11_DIGITAL_PIN);
+    //water_level = adc_read(WATER_SENSOR_ANALOG_CHANNEL);
+    //uint16_t stepper_level = adc_read(STEPPER_POT_ANALOG_CHANNEL);
+    //printf("T: %.2f, RH: %.2f, water level (0-1024): %u, pot(0-1024): %u", dht11_data.temp, dht11_data.humidity, water_level, stepper_level);
+
+    seconds_since_last_lcd_update++;
+    seconds_since_last_dht11_poll++;
 
     start_second_timer();
 }

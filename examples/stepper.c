@@ -9,6 +9,7 @@
 
 int main () {
 	uart_init(9600);
+	adc_init();
 	stepper_t stepper = stepper_init(28, 26, 24, 22);
 	uint16_t analog_val = adc_read(0);
 	printf("%u\n", analog_val);
