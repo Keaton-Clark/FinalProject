@@ -20,7 +20,7 @@ State machine prototype. Adapt to new program in main.c.
 #define WATER_LEVEL_THRESHOLD 256       // Analog threshold of water sensor before transitioning to ERROR.
 #define TEMPERATURE_THRESHOLD 0       // Minimum temperature threshold for the fan to run.
 
-// Pin definitions.
+// Pin definitions. Make sure you're using those in io.c!
 #define RED_LED_DIGITAL_PIN 28
 #define YELLOW_LED_DIGITAL_PIN 26
 #define GREEN_LED_DIGITAL_PIN 24
@@ -28,10 +28,10 @@ State machine prototype. Adapt to new program in main.c.
 
 #define FAN_MOTOR_DIGITAL_PIN 52
 
-#define STEPPER_MOTOR_DIGITAL_PIN_1 44
-#define STEPPER_MOTOR_DIGITAL_PIN_2 42
-#define STEPPER_MOTOR_DIGITAL_PIN_3 40
-#define STEPPER_MOTOR_DIGITAL_PIN_4 38
+#define STEPPER_MOTOR_DIGITAL_PIN_1 37
+#define STEPPER_MOTOR_DIGITAL_PIN_2 35
+#define STEPPER_MOTOR_DIGITAL_PIN_3 33
+#define STEPPER_MOTOR_DIGITAL_PIN_4 31
 
 #define DHT11_DIGITAL_PIN 50
 
