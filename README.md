@@ -12,63 +12,76 @@
 ## TODO
 ### Physical integrations (wiring and physical locations)
 - [ ] Water level sensor
-- [ ] LCD screen (to display air temp and humidity)
+- [x] LCD screen (to display air temp and humidity)
 - [ ] Stepper motor
 - [ ] On/off button
 - [ ] Vent direction, using either buttons or a potentiometer
 - [ ] Temperature + humidity sensor (DHT11)
 - [ ] Red, green, yellow, and blue indicating states
+	- Can be substituted for one RGB LED
 
 ### Modular logic
-- [ ] Monitoring water level using either interrupts or ADC sampling
+- [x] Monitoring water level using either interrupts or ADC sampling
 	- ADC library is not allowed
-- [ ] Vent direction control using the stepper motor, with either buttons or a potentiometer
+- [x] Vent direction control using the stepper motor, with either buttons or a potentiometer
 	- Stepper motor libraries are allowed
-- [ ] LCD display reflecting humidity and temperature (with or without integration with the DHT11)
+	- **Implementation:** Potentiometer used
+- [x] LCD display reflecting humidity and temperature (with or without integration with the DHT11)
 	- LCD libraries are allowed
-- [ ] Use of DHT11 to get temperature and humidity readings
+- [x] Use of DHT11 to get temperature and humidity readings
 	- Libraries are allowed
-- [ ] Turning the fan blade on and off
-- [ ] State management (to manage the red/green/yellow/blue LEDs)
+- [x] Turning the fan blade on and off
+- [x] State management (to manage the red/green/yellow/blue LEDs)
 	- Doesn't (necessarily) need integration with other sensors at this stage
-	- [ ] On/off button (to transition between the **disabled** and **idle** states)
-	- [ ] "Error" reset button (to transition out of the **error** state into the **idle** state)
+	- [x] On/off button (to transition between the **disabled** and **idle** states)
+	- [x] "Error" reset button (to transition out of the **error** state into the **idle** state)
 
 ### Integrated logic
-- [ ] Event reporting, over USB (serial), indicating:
+- [x] Event reporting, over USB (serial), indicating:
 	- any changes to the stepper motor position for the vent
 	- the time of state transitions as described in below
-- [ ] System should always respond to changes in vent control (whether from buttons or a potentiometer)
-- [ ] Humidity and temperature should always be reflected on the LCD screen, at least once per minute
-- [ ] Implementation of the state machine:
-	- [ ] The "stop" button should always transition to the **disabled** state
-	- [ ] The **disabled** state, where:
-		- [ ] the yellow LED should be on
-		- [ ] temperature/water mointoring should be off
-		- [ ] the "start" button should transition to the **idle** state
-	- [ ] The **idle** state, where:
-		- [ ] the water level should be monitored and transition to **error** if the water level is too low
-		- [ ] the green LED should be on
-		- [ ] an automatic transition to **running** occurs if the temperature is above a certain threshold
-	- [ ] The **error** state, where:
-		- [ ] the motor is disabled
-		- [ ] the "reset" button should transition to the **idle** state if the water level is above the threshold
-		- [ ] the red LED should be turned on
-	- [ ] The **running** state, where:
-		- [ ] the fan should be on
-		- [ ] an automatic transition to **idle** if the temperature drops below a certain threshold
-		- [ ] an automatic transition to **error** if the water drops below a certain threshold
-		- [ ] the blue LED should be turned on
+	- **Implementation:** Uses `printf()` calls in transition functions and stepper motor if statement body, may change
+- [x] System should always respond to changes in vent control (whether from buttons or a potentiometer)
+- [x] Humidity and temperature should always be reflected on the LCD screen, at least/exactly once per minute
+- [x] Implementation of the state machine:
+	- [x] The "stop" button should transition to the **disabled** state if in **idle** or **running**, but _not_ when **error**
+	- [x] The **disabled** state, where:
+		- [x] the yellow LED should be on
+		- [x] temperature/water mointoring should be off
+		- [x] the "start" button should transition to the **idle** state
+	- [x] The **idle** state, where:
+		- [x] the water level should be monitored and transition to **error** if the water level is too low
+		- [x] the green LED should be on
+		- [x] an automatic transition to **running** occurs if the temperature is above a certain threshold
+	- [x] The **error** state, where:
+		- [x] the motor is disabled
+		- [x] the "reset" button should transition to the **idle** state if the water level is above the threshold
+		- [x] the red LED should be turned on
+	- [x] The **running** state, where:
+		- [x] the fan should be on
+		- [x] an automatic transition to **idle** if the temperature drops below a certain threshold
+		- [x] an automatic transition to **error** if the water drops below a certain threshold
+		- [x] the blue LED should be turned on
 
 ### Other deliverables
-- [ ] Complete schematic
+- [x] Complete schematic
+	- We're just using Fritzing
 - [ ] Links to all specification sheets for components used
+	- [ ] DHT11 (temp/humidity)
+	- [ ] 2x16 LED
+	- [ ] Water sensor
+	- [ ] Stepper motor
+	- [ ] ULN2003 stepper motor driver board
+	- [ ] RTC
+	- [ ] DC motor
 - [ ] Pictures of final system
 - [ ] Video of system in operation
 - [ ] Design overview and constraints
 	- [ ] Operating temperatures
 	- [ ] Power requirements
+	- [ ] Exported Fritzing schematic image
 	- [ ] ... some others I can't think of
+- [ ] Rebuild code with dwm-style state management
 
 ## Developing with WSL
 (see https://learn.microsoft.com/en-us/windows/wsl/connect-usb)
