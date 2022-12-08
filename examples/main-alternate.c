@@ -15,7 +15,8 @@ State machine prototype. Adapt to new program in main.c.
 
 // Parameters.
 #define VENT_DIRECTION_THRESHOLD 50     // Debouncing threshold, also reduces false movement due to noise
-#define STEPS_PER_ANALOG_UNIT 10        // Number of stepper motor steps to take per unit difference between the last "move" and this "move".
+// It takes ~500-600 steps for a full rotation, so divide by 2 to map 0-1024
+#define STEPS_PER_ANALOG_UNIT 0.5        // Number of stepper motor steps to take per unit difference between the last "move" and this "move".
 #define WATER_LEVEL_THRESHOLD 256       // Analog threshold of water sensor before transitioning to ERROR.
 #define TEMPERATURE_THRESHOLD 0       // Minimum temperature threshold for the fan to run.
 
@@ -35,8 +36,8 @@ State machine prototype. Adapt to new program in main.c.
 #define DHT11_DIGITAL_PIN 50
 
 // ADC channels.
-#define STEPPER_POT_ANALOG_PIN 0        // Assuming we want a potentiometer for the vent direction
-#define WATER_SENSOR_ANALOG_PIN 1
+#define STEPPER_POT_ANALOG_CHANNEL 0        // Assuming we want a potentiometer for the vent direction
+#define WATER_SENSOR_ANALOG_CHANNEL 1
 
 // Button interrupt definitions. 
 //
@@ -93,6 +94,11 @@ uint8_t seconds_since_last_update = 0;
 
 // If RTC polled
 uint8_t minute_of_last_update;
+
+// Contains the last ADC value for the vent direction potentiometer
+// that was used to change the vent direction.
+uint16_t last_pot_change_value;
+uint16_t water_level;
 
 void log_message(char* message){
     char time_str[100]; // TODO: "memory safety"
@@ -153,7 +159,7 @@ void setup(){
     EIMSK |= 0b00011100;
 
     // Set up 1-second timer
-    //TIMSK1 = 0b00000001; // Enable timer interrupts
+    TIMSK1 = 0b00000001; // Enable timer interrupts
     start_second_timer();
 
     // Initalize UART, 9600 baud
@@ -190,6 +196,8 @@ void setup(){
     // Update LCD
     write_lcd("");
 
+    // Update counters
+    last_pot_change_value = adc_read(STEPPER_POT_ANALOG_CHANNEL);
     minute_of_last_update = get_time(RTC_ADDR).min;
 
 	// Initial transition
@@ -197,11 +205,6 @@ void setup(){
 }
 
 int main(){
-    // Contains the last ADC value for the vent direction potentiometer
-    // that was used to change the vent direction.
-    uint16_t last_pot_change_value = 0;
-    uint16_t water_level;
-
     setup();
 
     for(;;){
@@ -226,6 +229,8 @@ int main(){
             }else{
                 write_lcd("");
             }
+
+            seconds_since_last_update = 0;
         }
 		
         if(state == ERROR){
@@ -236,16 +241,13 @@ int main(){
 
         // Has the potentiometer changed by a meaningful amount?
         // If so, trigger a change on the stepper motor
-        // BUG: this doesn't work!!
-        /*
-        uint16_t current_pot_value = adc_read(STEPPER_POT_ANALOG_PIN);
+        uint16_t current_pot_value = adc_read(STEPPER_POT_ANALOG_CHANNEL);
         if (abs(current_pot_value - last_pot_change_value) > VENT_DIRECTION_THRESHOLD){
-            int32_t difference = current_pot_value - last_pot_change_value;
+            int32_t difference = (int32_t)current_pot_value - (int32_t)last_pot_change_value;
             int16_t steps = difference * STEPS_PER_ANALOG_UNIT;
             stepper_rotate(stepper, steps);
             last_pot_change_value = current_pot_value;
         }
-        */
 
         if(state == DISABLED){
             // Don't do anything else.
@@ -253,7 +255,7 @@ int main(){
         }
 
         // implied: program state is one of IDLE, RUNNING
-        water_level = adc_read(WATER_SENSOR_ANALOG_PIN);
+        water_level = adc_read(WATER_SENSOR_ANALOG_CHANNEL);
         if (water_level <= WATER_LEVEL_THRESHOLD){
             transition_to_error();
         }
@@ -370,11 +372,15 @@ ISR(RESET_BUTTON_INTERRUPT_VECTOR){
     }
 }
 
-// TODO: is this how we want to update the LCD every minute?
-
 ISR(TIMER_INTERRUPT_VECTOR){
     stop_second_timer();
 
+    //DEBUG
+    dht11_data = dht11_read(DHT11_DIGITAL_PIN);
+    water_level = adc_read(WATER_SENSOR_ANALOG_CHANNEL);
+    uint16_t stepper_level = adc_read(STEPPER_POT_ANALOG_CHANNEL);
+    printf("T: %.2f, RH: %.2f\n, water level (0-1024): %u, pot(0-1024): %u", dht11_data.temp, dht11_data.humidity, water_level, stepper_level);
+    
     seconds_since_last_update++;
 
     start_second_timer();
