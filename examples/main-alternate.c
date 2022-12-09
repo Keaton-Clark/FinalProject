@@ -225,7 +225,21 @@ int main(){
             if(state == ERROR){
                 write_lcd("Water low");
             }else{
-                write_lcd("");
+                
+		float f = dht11_data.readTemperature(true);
+  		float h = dht11_data.readHumidity();
+		 
+  		lcd.clear();
+
+  		lcd_twi_cursor(&lcd, 0, 0);
+  		write_lcd("Tempature: ");
+  		write_lcd(f);
+  		lcd_twi_cursor(&lcd, 0, 0);
+  		write_lcd("Humidity: ");
+  		write_lcd(h);
+		    
+		    
+		    
             }
 
             seconds_since_last_lcd_update = 0;
