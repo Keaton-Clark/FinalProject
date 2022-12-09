@@ -115,11 +115,14 @@ void log_message(char* message){
     printf("[%s] %s\n", time_str, message);
 }
 
-void write_lcd(){
+void write_lcd(char* message_to_display){
     // BUG: again, DHT11 gets Very Angry if you poll it too quickly.
     // 2.5 sec delay to try and prevent this from being an issue
     _delay_ms(2500);
-
+    dht11_data = dht11_read(DHT11_DIGITAL_PIN);
+    
+    
+   fprintf(&lcd, "%.1fc", message_to_display);
 	// Read from DHT11 here
 
 	// Write to LCD here
@@ -208,6 +211,16 @@ int main () {
 	for (;;) {
 		if (handler[state]) {
 			state = handler[state]();
+			
+			lcd_twi_clear(&lcd);
+			float f = dht11_data.readTemperature(true);
+  			float h = dht11_data.readHumidity();
+			lcd_twi_cursor(&lcd, 0, 0);
+  			write_lcd("Tempature: ");
+  			write_lcd(itoa(f));
+  			lcd_twi_cursor(&lcd, 0, 0);
+  			write_lcd("Humidity: ");
+  			write_lcd(itoa(h));
 		} else {
 			state = handler[ERROR]();
 		}
