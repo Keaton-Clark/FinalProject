@@ -20,7 +20,7 @@ State machine prototype. Adapt to new program in main.c.
 #define WATER_LEVEL_THRESHOLD 256       // Analog threshold of water sensor before transitioning to ERROR.
 #define TEMPERATURE_THRESHOLD 0       // Minimum temperature threshold for the fan to run.
 
-// Pin definitions. Make sure you're using those in io.c!
+// Pin definitions. Make sure you're using those defined in io.c!
 #define RED_LED_DIGITAL_PIN 28
 #define YELLOW_LED_DIGITAL_PIN 26
 #define GREEN_LED_DIGITAL_PIN 24
@@ -39,23 +39,16 @@ State machine prototype. Adapt to new program in main.c.
 #define STEPPER_POT_ANALOG_CHANNEL 0        // Assuming we want a potentiometer for the vent direction
 #define WATER_SENSOR_ANALOG_CHANNEL 1
 
-// Button interrupt definitions. 
-//
-// there's probably a better way to be defining these as pins-to-vectors
-//
-// also, i think we should prefer INTn (external interrupts) to PCINTn (pin interrupts) since:
-// - no additional logic needed to figure out which pin
-//   threw an interrupt (which is needed in PCINTn, usually)
-// - allows us to have the interrupt only occur on rising edge,
-//   which eliminates the need to debounce the falling edge
-// - no need for software interrupts
+// External button interrupts.
+// If you change these, you must also change the bitmask against EICRA/B and EIMSK below!!
+#define START_BUTTON_INTERRUPT_VECTOR INT2_vect // Digital pin 19
+#define STOP_BUTTON_INTERRUPT_VECTOR INT3_vect // Digital pin 18
+#define RESET_BUTTON_INTERRUPT_VECTOR INT4_vect // Digital pin 2
 
-// if you change these, you must also change EICRA/B and EIMSK below!!
-#define START_BUTTON_INTERRUPT_VECTOR INT2_vect
-#define STOP_BUTTON_INTERRUPT_VECTOR INT3_vect
-#define RESET_BUTTON_INTERRUPT_VECTOR INT4_vect
+// Timer interrupts.
 #define TIMER_INTERRUPT_VECTOR TIMER1_OVF_vect
 
+// Address definitions.
 #define LCD_ADDR 0x27
 #define RTC_ADDR 0x68
 
@@ -176,7 +169,7 @@ void setup(){
     TIMSK1 = 0b00000001; // Enable timer interrupts
     start_second_timer();
 
-    // Initialize everything
+    // Initialize everything else
     red_led = new_pin(RED_LED_DIGITAL_PIN);
     yellow_led = new_pin(YELLOW_LED_DIGITAL_PIN);
     green_led = new_pin(GREEN_LED_DIGITAL_PIN);
@@ -288,20 +281,11 @@ int main(){
 // No monitoring of temp or water
 // Start button monitored with ISR
 void transition_to_disabled(){
-    // Record transition time to UART
-    log_message("Transition to DISABLED");
-    
-    // Disable the timer that's updating the LCD screen
-    stop_second_timer();
-    
-    // Turn on the LED
-    set_leds(DISABLED);
-
-    // Turn off the fan motor
-    write_pin(fan_motor, LOW);
-
-    // Set global program state to DISABLED
-    state = DISABLED;
+    log_message("Transition to DISABLED");  // Record transition time to UART
+    stop_second_timer();                    // Disable the timer that's updating the LCD screen
+    set_leds(DISABLED);                     // Turn on the LED
+    write_pin(fan_motor, LOW);              // Turn off the fan motor
+    state = DISABLED;                       // Set global program state to DISABLED
 }
 
 
@@ -309,20 +293,11 @@ void transition_to_disabled(){
 // Water level should be continuously monitored and state changed to error if level is too low
 // GREEN LED should be ON
 void transition_to_idle(){
-    // Record transition time to UART
-    log_message("Transition to IDLE");
-    
-    // Enable the timer that's updating the LCD screen
-    start_second_timer();
-    
-    // Turn on the LED
-    set_leds(IDLE);
-
-    // Turn off the fan motor
-    write_pin(fan_motor, LOW);
-
-    // Set global program state to IDLE
-    state = IDLE;
+    log_message("Transition to IDLE");	// Record transition time to UART
+    start_second_timer();				// Enable the timer that's updating the LCD screen		
+    set_leds(IDLE);						// Turn on the LED
+    write_pin(fan_motor, LOW);			// Turn off the fan motor
+    state = IDLE;                       // Set global program state to IDLE
 }
 
 // Fan motor should be on
@@ -330,17 +305,10 @@ void transition_to_idle(){
 // System should transition to ERROR state if water becomes too low
 // BLUE LED should be turned on (all other LEDs turned off)
 void transition_to_running(){
-    // Record transition time to UART
-    log_message("Transition to RUNNING");
-    
-    // Turn on the fan motor
-    write_pin(fan_motor, HIGH);
-    
-    // Turn on the LED
-    set_leds(RUNNING);
-
-    // Set global program state to RUNNING
-    state = RUNNING;
+    log_message("Transition to RUNNING");   // Record transition time to UART
+    write_pin(fan_motor, HIGH);             // Turn on the fan motor
+    set_leds(RUNNING);                      // Turn on the LED
+    state = RUNNING;                        // Set global program state to RUNNING
 }
 
 // Motor should be off and not start regardless of temperature
@@ -348,20 +316,11 @@ void transition_to_running(){
 // Error message should be displayed on LCD
 // RED LED should be turned on (all other LEDs turned off)
 void transition_to_error(){
-    // Record transition time to UART
-    log_message("Transition to ERROR");
-
-    // Write message to LCD
-    write_lcd("Water low");
-    
-    // Turn off the fan motor
-    write_pin(fan_motor, LOW);
-
-    // Turn on red LED
-    set_leds(ERROR);
-
-    // Set global program state to ERROR
-    state = ERROR;
+    log_message("Transition to ERROR"); // Record transition time to UART
+    write_lcd("Water low");             // Write message to LCD
+    write_pin(fan_motor, LOW);          // Turn off the fan motor
+    set_leds(ERROR);                    // Turn on red LED
+    state = ERROR;                      // Set global program state to ERROR
 }
 
 /* ISRs */
