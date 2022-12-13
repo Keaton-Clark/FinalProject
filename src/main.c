@@ -218,7 +218,7 @@ int main () {
 			lcd_twi_cursor(&lcd, 0, 0);
   			write_lcd("Tempature: ");
   			write_lcd(itoa(f));
-  			lcd_twi_cursor(&lcd, 0, 0);
+  			lcd_twi_cursor(&lcd, 0, 1);
   			write_lcd("Humidity: ");
   			write_lcd(itoa(h));
 		} else {
