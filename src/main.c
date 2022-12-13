@@ -212,15 +212,7 @@ int main () {
 		if (handler[state]) {
 			state = handler[state]();
 			
-			lcd_twi_clear(&lcd);
-			float f = dht11_data.readTemperature(true);
-  			float h = dht11_data.readHumidity();
-			lcd_twi_cursor(&lcd, 0, 0);
-  			write_lcd("Tempature: ");
-  			write_lcd(itoa(f));
-  			lcd_twi_cursor(&lcd, 0, 1);
-  			write_lcd("Humidity: ");
-  			write_lcd(itoa(h));
+			
 		} else {
 			state = handler[ERROR]();
 		}
@@ -269,6 +261,22 @@ uint8_t check_for_state_change(){
 		seconds_since_last_dht11_poll = 0;
 
 		// Chris - your code here
+		if(state != ERROR){
+
+			lcd_twi_clear(&lcd);
+			float f = dht11_data.readTemperature(true);
+  			float h = dht11_data.readHumidity();
+			lcd_twi_cursor(&lcd, 0, 0);
+  			write_lcd("Tempature: ");
+  			write_lcd(itoa(f));
+  			lcd_twi_cursor(&lcd, 0, 1);
+  			write_lcd("Humidity: ");
+  			write_lcd(itoa(h));
+		}else{
+			lcd_twi_cursor(&lcd, 0, 0);
+  			write_lcd("Error ");
+
+		}
 
 		if (dht11_data.temp <= TEMPERATURE_THRESHOLD && state == RUNNING){
 			return IDLE;
