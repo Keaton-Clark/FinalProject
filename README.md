@@ -1,7 +1,7 @@
 # CPE 301 Final Project
 
 - **Team name**: Exactly One Gallon of Milk
-- **Members:** Keaton Clark, Chris Zinser, Jann Arellano, Lloyd Gonzales
+- **Members:** Keaton Clark (Keaton-Clark), Chris Zinser (ThatGuyChrisZ), Jann Arellano (Arellano-Jann), Lloyd Gonzales (lgactna)
 
 ## (approximate) timeline
 - Dec 3: Modular logic completed; individual sensors working on breadboards
