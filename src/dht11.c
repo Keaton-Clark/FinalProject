@@ -17,7 +17,12 @@ uint32_t wait_pulse(uint8_t level, volatile uint8_t *pin, uint8_t bitmask) {
 
 dht11_t dht11_read(uint8_t pin_num) {
 	cli(); //disable interrupts
-	pin_t pin = new_pin(pin_num);
+	pin_t pin = {
+		._ddr = &DDRH,
+		._bitmask = _BV(PH4),
+		._pin = &PINH,
+		._port = &PORTH
+	};// = new_pin(pin_num);
 	uint32_t cycles[80];
 	uint8_t data[5];
 	static dht11_t out;

@@ -9,7 +9,7 @@ BIN = $(shell basename `pwd`)
 # Targeted microprocessor
 INSTALL_TGT = atmega2560
 # Install location
-INSTALL_DIR = /dev/ttyACM0
+INSTALL_DIR = /dev/ttyUSB0
 # Install baud rate
 INSTALL_BAUD = 115200
 # avrdude flags

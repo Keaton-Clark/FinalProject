@@ -242,16 +242,17 @@ int uart_get_char(FILE *stream) {
 }
 void adc_init() {
 	ADMUX |= _BV(REFS0); //Set reference voltage to AVCC
-	ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0) | _BV(ADEN);
+	ADCSRA |= _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0) | _BV(ADEN) | _BV(ADSC);
 	//ADMUX |= _BV(ADLAR); //Left justify ADC result
 }
 
 uint16_t adc_read(uint8_t channel) {
-	ADMUX = (ADMUX & 0xf0) | channel; //Select channel to read
+	ADMUX &= 0xe0;
+	ADMUX |= channel&0x07; //Select channel to read
+	ADCSRB = channel & _BV(3);
 	ADCSRA |= _BV(ADSC); //Start conversion
-	loop_until_bit_is_set(ADCSRA, ADIF); //SC bit will be clear when conversion is done
-	ADCSRA |= _BV(ADIF);
-	return ADC;
+	loop_until_bit_is_set(ADCSRA, ADSC); //SC bit will be clear when conversion is done
+	return ADCW;
 }
 #define BITRATE ((F_CPU/SCL_CLK)-16)/2
 void twi_init() {
