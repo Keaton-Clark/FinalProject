@@ -1,6 +1,6 @@
 # CPE 301 Final Project
 
-- **Team name**: (we need one)
+- **Team name**: Exactly One Gallon of Milk
 - **Members:** Keaton Clark, Chris Zinser, Jann Arellano, Lloyd Gonzales
 
 ## (approximate) timeline
