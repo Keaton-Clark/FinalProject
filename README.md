@@ -11,13 +11,13 @@
 
 ## TODO
 ### Physical integrations (wiring and physical locations)
-- [ ] Water level sensor
+- [x] Water level sensor
 - [x] LCD screen (to display air temp and humidity)
-- [ ] Stepper motor
-- [ ] On/off button
-- [ ] Vent direction, using either buttons or a potentiometer
-- [ ] Temperature + humidity sensor (DHT11)
-- [ ] Red, green, yellow, and blue indicating states
+- [x] Stepper motor
+- [x] On/off button
+- [x] Vent direction, using either buttons or a potentiometer
+- [x] Temperature + humidity sensor (DHT11)
+- [x] Red, green, yellow, and blue indicating states
 	- Can be substituted for one RGB LED
 
 ### Modular logic
@@ -66,22 +66,22 @@
 ### Other deliverables
 - [x] Complete schematic
 	- We're just using Fritzing
-- [ ] Links to all specification sheets for components used
-	- [ ] DHT11 (temp/humidity)
-	- [ ] 2x16 LED
-	- [ ] Water sensor
-	- [ ] Stepper motor
-	- [ ] ULN2003 stepper motor driver board
-	- [ ] RTC
-	- [ ] DC motor
-- [ ] Pictures of final system
-- [ ] Video of system in operation
-- [ ] Design overview and constraints
-	- [ ] Operating temperatures
-	- [ ] Power requirements
-	- [ ] Exported Fritzing schematic image
-	- [ ] ... some others I can't think of
-- [ ] Rebuild code with dwm-style state management
+- [x] Links to all specification sheets for components used
+	- [x] DHT11 (temp/humidity)
+	- [x] 2x16 LED
+	- [x] Water sensor
+	- [x] Stepper motor
+	- [x] ULN2003 stepper motor driver board
+	- [x] RTC
+	- [x] DC motor
+- [x] Pictures of final system
+- [x] Video of system in operation
+- [x] Design overview and constraints
+	- [x] Operating temperatures
+	- [x] Power requirements
+	- [x] Exported Fritzing schematic image
+	- [x] ... some others I can't think of
+- [x] Rebuild code with dwm-style state management
 
 ## Developing with WSL
 (see https://learn.microsoft.com/en-us/windows/wsl/connect-usb)
